@@ -9,6 +9,7 @@ packaging==26.1
 pluggy==1.6.0
 Pygments==2.20.0
 pytest==9.0.3
+python-nmap==0.7.1
 PyYAML==6.0.3
 requests==2.33.1
 responses==0.26.0
