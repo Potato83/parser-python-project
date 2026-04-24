@@ -34,7 +34,7 @@ def test_scan_ports():
     # assert len(result) == 0, "Словарь должен быть пустым для заглушки"
     
 def test_get_subdomains_server_error():
-    domain = "example.com"
+    domain = "this-test-domain-does-not-exist.test123"
 
     responses.add(
         responses.GET, 
@@ -43,7 +43,7 @@ def test_get_subdomains_server_error():
         json={"error": "Internal Server Error"}
     )
 
-    result = get_subdomains("0.0.0.0")
+    result = get_subdomains("this-test-domain-does-not-exist.test123")
     
     assert isinstance(result, list), "Результат должен быть списком"
     assert len(result) == 0, "Должен быть возвращен пустой список при ошибке сервера"
