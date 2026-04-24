@@ -43,7 +43,7 @@ def test_get_subdomains_server_error():
         json={"error": "Internal Server Error"}
     )
 
-    result = get_subdomains("example.com")
+    result = get_subdomains("0.0.0.0")
     
     assert isinstance(result, list), "Результат должен быть списком"
     assert len(result) == 0, "Должен быть возвращен пустой список при ошибке сервера"

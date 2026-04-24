@@ -1,5 +1,6 @@
 import requests
 import nmap
+import json
 
 def get_subdomains(domain):
     url = f"https://crt.sh/?q={domain}&output=json"
@@ -55,5 +56,5 @@ def run_scan(domain):
     return final_json
     
 if __name__ ==  "__main__":
-    # print(run_scan(input("Введите домен/ip для сканирования: ")))
-    print(run_scan("example.com"))
+    print(json.dumps(run_scan(input("Введите домен/ip для сканирования: ")), indent=4))
+    # print(json.dumps(run_scan("example.com"), indent=4))
