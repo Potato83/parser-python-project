@@ -1,9 +1,8 @@
 import responses
 
-from main import get_subdomains, scan_ports
+from main import get_subdomains, scan_ports, setup_parser, bruteforce_dirs
 
 @responses.activate
-
 def test_get_subdomains_valid():
     
     domain = "example.com"
@@ -32,7 +31,35 @@ def test_scan_ports():
     assert 80 in result[host], "Должен быть найден порт 80"
     assert 443 in result[host], "Должен быть найден порт 443"
     # assert len(result) == 0, "Словарь должен быть пустым для заглушки"
+ 
+def test_cli_parser_valid_domain():
+    parser = setup_parser()
+    args = parser.parse_args(["-d", "test.com"])
+    assert args.domain == "test.com", "Парсер должен корректно обрабатывать аргумент -d"
+
+@responses.activate
+def test_brute_force_dirs():
+    url = "http://example.com"
+    dictionary_list = ["admin", "fake_dir"]
     
+    responses.add(
+        responses.HEAD, 
+        f"{url}/admin", 
+        status=200     
+    )
+    
+    responses.add(
+        responses.HEAD, 
+        f"{url}/fake_dir", 
+        status=404 
+    )
+    
+    result = bruteforce_dirs(url, dictionary_list)
+    # assert isinstance(result, dict), "Результат должен быть словарем"
+    assert "admin" in result, "Должен быть найден каталог 'admin'"
+    assert "fake_dir" not in result, "Каталог 'fake_dir' не должен быть найден"
+
+@responses.activate
 def test_get_subdomains_server_error():
     domain = "this-test-domain-does-not-exist.test123"
 
@@ -47,3 +74,4 @@ def test_get_subdomains_server_error():
     
     assert isinstance(result, list), "Результат должен быть списком"
     assert len(result) == 0, "Должен быть возвращен пустой список при ошибке сервера"
+    

@@ -1,6 +1,7 @@
 import requests
 import nmap
 import json
+import argparse
 
 def get_subdomains(domain):
     url = f"https://crt.sh/?q={domain}&output=json"
@@ -44,17 +45,40 @@ def scan_ports(hosts):
     
     return results
 
+def setup_parser():
+    parser = argparse.ArgumentParser(description="Сканер доменов и портов")
+    parser.add_argument("-d" , "--domain", help="Домен или IP для сканирования", required=True)
+    return parser
+
+def bruteforce_dirs(base_url, wordlist):
+    result_dict = {}
+    for word in wordlist:
+        url = f"{base_url.rstrip('/')}/{word}"
+        try:
+            response = requests.head(url, timeout=5, allow_redirects=True)
+            if response.status_code != 404:
+                result_dict[word] = f"{response.status_code} {response.reason}"
+        except requests.RequestException:
+            continue
+    return result_dict
+
 def run_scan(domain):
+    common_dirs = ["admin", "login", "dashboard", "config", "backup", "api", ".git"]
+    brute_result = bruteforce_dirs(f"http://{domain}", common_dirs)
     subs_list = get_subdomains(domain)
     subs_str = " ".join(set(subs_list + [domain]))
     scan_result = scan_ports(subs_str)
     
     final_json = {
         "subdomains": subs_list,
-        "ports": scan_result
+        "ports": scan_result,
+        "directories": brute_result
     }
     return final_json
-    
+
+
 if __name__ ==  "__main__":
-    print(json.dumps(run_scan(input("Введите домен/ip для сканирования: ")), indent=4))
-    # print(json.dumps(run_scan("example.com"), indent=4))
+    parser = setup_parser()
+    args = parser.parse_args()
+    result = run_scan(args.domain)
+    print(json.dumps(result, indent=4))
