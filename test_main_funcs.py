@@ -1,6 +1,8 @@
+from unittest import result
+
 import responses
 
-from main import get_subdomains, scan_ports, setup_parser, bruteforce_dirs
+from main import get_subdomains, scan_ports, setup_parser, bruteforce_dirs, generate_markdown
 
 @responses.activate
 def test_get_subdomains_valid():
@@ -32,10 +34,25 @@ def test_scan_ports():
     assert 443 in result[host], "Должен быть найден порт 443"
     # assert len(result) == 0, "Словарь должен быть пустым для заглушки"
  
-def test_cli_parser_valid_domain():
+def test_cli_parser():
     parser = setup_parser()
-    args = parser.parse_args(["-d", "test.com"])
+    args = parser.parse_args(["-d", "test.com", "-w", "wordlist.txt", "-o", "output.md"])
     assert args.domain == "test.com", "Парсер должен корректно обрабатывать аргумент -d"
+    assert args.wordlist == "wordlist.txt", "Парсер должен корректно обрабатывать аргумент -w"
+    assert args.output == "output.md", "Парсер должен корректно обрабатывать аргумент -o"
+
+def test_generate_md():
+    fake_data = {
+    "subdomains":["dev.test.com"],
+    "ports": {"127.0.0.1": {80: "open"}},
+    "directories": {"admin": "200 OK"}
+    }
+    md = generate_markdown(fake_data, "test.com")
+    assert "# OSINT Report for test.com" in md, "Markdown должен содержать заголовок с доменом"
+    assert "dev.test.com" in md, "Markdown должен содержать найденные поддомены"
+    assert "127.0.0.1" in md, "Markdown должен содержать IP-адреса из результатов сканирования портов"
+    
+    
 
 @responses.activate
 def test_brute_force_dirs():
