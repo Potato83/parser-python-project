@@ -4,9 +4,11 @@ import json
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 
+HEADERS =  {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/121.0'}
+
 def check_url(url): # проверяем URL
     try:
-        response = requests.head(url, timeout=5, allow_redirects=True)
+        response = requests.head(url, timeout=5, allow_redirects=True, headers=HEADERS)
         return response.status_code
     except requests.RequestException:
         return None
@@ -14,8 +16,7 @@ def check_url(url): # проверяем URL
 def get_subdomains(domain):  # ищем поддомены
     url = f"https://crt.sh/?q={domain}&output=json"
     
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/121.0'}
-    response = requests.get(url, headers=headers, timeout=30)
+    response = requests.get(url, headers=HEADERS, timeout=30)
     
     if response.status_code != 200 or "json" not in response.headers.get("Content-Type", ""):
         return []
@@ -54,7 +55,7 @@ def scan_ports(hosts): # сканим порты
 
 def get_valid_schema(domain): # поиск https или http
     try:
-        response = requests.head(f"https://{domain}", timeout=5)
+        response = requests.head(f"https://{domain}", timeout=5, headers=HEADERS)
         if response.status_code:
             return "https://"
     except requests.RequestException:
