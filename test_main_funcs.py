@@ -1,8 +1,9 @@
 from unittest import result
 
+import requests
 import responses
 
-from main import get_subdomains, scan_ports, setup_parser, bruteforce_dirs, generate_markdown
+from main import get_subdomains, scan_ports, setup_parser, bruteforce_dirs, generate_markdown, get_valid_schema, check_url
 
 @responses.activate
 def test_get_subdomains_valid():
@@ -43,6 +44,7 @@ def test_cli_parser():
 
 def test_generate_md():
     fake_data = {
+    "protocol": "https://",
     "subdomains":["dev.test.com"],
     "ports": {"127.0.0.1": {80: "open"}},
     "directories": {"admin": "200 OK"}
@@ -51,8 +53,7 @@ def test_generate_md():
     assert "# OSINT Report for test.com" in md, "Markdown должен содержать заголовок с доменом"
     assert "dev.test.com" in md, "Markdown должен содержать найденные поддомены"
     assert "127.0.0.1" in md, "Markdown должен содержать IP-адреса из результатов сканирования портов"
-    
-    
+    assert "Protocol" in md, "Markdown должен содержать информацию о протоколе"
 
 @responses.activate
 def test_brute_force_dirs():
@@ -91,4 +92,44 @@ def test_get_subdomains_server_error():
     
     assert isinstance(result, list), "Результат должен быть списком"
     assert len(result) == 0, "Должен быть возвращен пустой список при ошибке сервера"
+
+@responses.activate
+def test_get_valid_schema():
+    domain = "example.com"
+    responses.add(
+        responses.HEAD, 
+        f"https://{domain}",
+        status=200
+    )
+    schema = get_valid_schema(domain)
+    assert schema == "https://", "Функция должна возвращать 'https://' для данного домена"
+
+@responses.activate
+def test_get_valid_schema_fallback():
+    domain = "example.com"
+    responses.add(
+        responses.HEAD, 
+        f"https://{domain}",
+        body=requests.exceptions.ConnectionError("Connection refused")
+    )
+    schema = get_valid_schema(domain)
+    assert schema == "http://", "Функция должна возвращать 'http://' при невозможности установить HTTPS-соединение"
     
+def test_check_url():
+    url = "http://example.com"
+    responses.add(
+        responses.HEAD, 
+        url,
+        status=200
+    )
+    status_code = check_url(url)
+    assert status_code == 200, "Функция должна возвращать статус код 200 для доступного URL"
+    
+    url_unreachable = "http://unreachable.example.com"
+    responses.add(
+        responses.HEAD, 
+        url_unreachable,
+        body=requests.exceptions.ConnectionError("Connection refused")
+    )
+    status_code_unreachable = check_url(url_unreachable)
+    assert status_code_unreachable is None, "Функция должна возвращать None для недоступного URL"
